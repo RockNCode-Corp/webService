@@ -1,0 +1,4 @@
+#name:
+#    path: '' path with parameters between { }
+#    action: { controller: 'NameController:nameAction', params: { nameParams: nameParams }}
+#    type: '' GET or POST or PUT, if this line is forgot, the request accept all type

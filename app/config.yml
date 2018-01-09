@@ -1,0 +1,6 @@
+# Add on this file all parameters, don't push this file on repository git
+bd:
+  host: 'REQUIRED'
+  dbname: 'REQUIRED'
+  login: 'REQUIRED'
+  password: 'REQUIRED'
