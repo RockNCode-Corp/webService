@@ -17,9 +17,9 @@ class Example extends Entity {
 //    private $someSubTableAttribute;
 
     public function __construct($id, $someAttribute) {
-        parent::__construct($id, "TABLE NAME");
-
         $this->someAttribute = $someAttribute;
+
+        parent::__construct($id, "TABLE NAME");
     }
 
     public function jsonSerialize() {

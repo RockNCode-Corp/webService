@@ -40,7 +40,7 @@ abstract class Entity extends DataBase implements JsonSerializable {
     }
 
     /**
-     * @return mixed
+     * @return int
      */
     public function getId(){
         return $this->id;
@@ -50,6 +50,11 @@ abstract class Entity extends DataBase implements JsonSerializable {
      * Update this entity
      */
     public function update(){
+
+        if($this->id == -1){
+            return $this->insert();
+        }
+
         $params = $this->modify;
         $sql = 'UPDATE '.$params['table'].' SET ';
         unset($params['table']);
@@ -92,7 +97,7 @@ abstract class Entity extends DataBase implements JsonSerializable {
     /**
      * Delete this entity
      */
-    public function supprimer(){
+    public function delete(){
         $sql = 'DELETE FROM '.$this->modify['table'].' WHERE id = :id';
         $this->execute($sql, array(':id' => $this->getId()), true);
     }
