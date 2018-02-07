@@ -34,8 +34,12 @@ abstract class Repository extends DataBase {
                 if($property->isPrivate() || $property->isProtected())
                     $property->setAccessible(true);
 
-                if(is_array($properties[$name]) && array_key_exists('entity', $properties[$name])){
-                    $property->setValue($entity, $properties[$name]['value']);
+                if(is_array($properties[$name])){
+                    if(array_key_exists('entity', $properties[$name])){
+                        $property->setValue($entity, $properties[$name]['value']);
+                    }else if(array_key_exists('name', $properties[$name])){
+                        $property->setValue($entity, $data[$properties[$name]['name']]);
+                    }
                 }else{
                     $property->setValue($entity, $data[$properties[$name]]);
                 }
@@ -82,7 +86,6 @@ abstract class Repository extends DataBase {
                 }else if(!empty($oneTo)){
                     $properties[$property->getName()] = array(
                         'entity' => $oneTo['entity'],
-                        'isNull' => $oneTo['default'],
                         'key' => $oneTo['key']
                     );
                 }else if(!empty($name)){
@@ -125,7 +128,7 @@ abstract class Repository extends DataBase {
             }
         }
 
-        $sql = $select." ".$from." ".$join." WHERE id = :id";
+        $sql = $select." ".$from." ".$join." WHERE $table.id = :id";
         $data = $this->execute($sql, array(
             'id' => $id
         ));
@@ -140,6 +143,49 @@ abstract class Repository extends DataBase {
      * @return Entity
      */
     public function getBy(string $entityTarget, array $params) : Entity {
+        $entityTarget = str_replace(':', '\\entities\\', $entityTarget);
 
+        $properties = $this->getProperties($entityTarget);
+        $table = $properties['table'];
+        $select = "SELECT $table.id";
+        $from = 'FROM '.$table;
+        $where = '';
+        $join = '';
+
+        unset($properties['table']);
+        unset($properties['constructor']);
+
+        foreach ($properties as $key => $value){
+            if(is_array($value)){
+                if(array_key_exists('table', $value)){
+                    $join .= 'INNER JOIN '.$value['table'].' ON '.$table.'.id'.'='.$value['table'].'.'.$value['key'].' ';
+                    $select .= ", ".$value['table'].'.'.$value['name'];
+                }else if(array_key_exists('entity', $value) && !array_key_exists('default', $value)){
+                    $value['value'] =  $this->getBy($value['entity'], array($value['key'] => $id));
+                }
+            }else{
+                $select .= ", ".$table.'.'.$value;
+
+                if(array_key_exists($key, $params)){
+                    if(empty($where)){
+                        $where = " WHERE $table.$value = :$key";
+                    }else {
+                        $where .= " AND $table.$value = :$key";
+
+                    }
+                }else if(array_key_exists($value, $params)){
+                    if(empty($where)){
+                        $where = " WHERE $table.$value = :$value";
+                    }else {
+                        $where .= " AND $table.$value = :$value";
+                    }
+                }
+            }
+        }
+
+        $sql = $select." ".$from." ".$join.$where;
+        $data = $this->execute($sql, $params);
+
+        return $this->construct($entityTarget, $data, $properties);
     }
 }

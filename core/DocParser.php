@@ -26,7 +26,7 @@ class DocParser {
         foreach($lines as $line){
             if(strpos($line, $target) !== FALSE){
                 $array = explode($target." ", $line);
-                $params = preg_split("/\w+=\w+/", $array[1]);
+                $params = preg_split("/\s/", $array[1]);
                 foreach ($params as $param){
                     $param = explode("=", $param);
                     $return[$param[0]] = $param[1];
