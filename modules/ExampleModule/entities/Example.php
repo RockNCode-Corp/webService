@@ -30,14 +30,14 @@ class Example extends Entity {
     private $someAttributeForeignKey;
 
     /**
-     * @one-to entity=NAME key=NAME FOREIGN KEY default=null
+     * @one-to entity=NAME key=NAME FOREIGN KEY
      */
     private $someSubEntity = null;
 
     /**
-     * @one-to entity=MODULE:NAME key=NAME FOREIGN KEY
+     * @one-to entity=MODULE:NAME key=NAME FOREIGN KEY table=TABLE NAME where=COLUMN NAME
      */
-    private $someSubEntityNotNull;
+    private $someSubEntityWithIDInJoinTable;
 
     public function __construct($id, $someAttribute, $someSubEntityNotNull) {
         $this->someAttribute = $someAttribute;
