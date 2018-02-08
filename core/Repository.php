@@ -88,6 +88,10 @@ abstract class Repository extends DataBase {
                         'entity' => $oneTo['entity'],
                         'key' => $oneTo['key']
                     );
+                    if(!empty($oneTo['table']) && !empty($oneTo['where'])){
+                        $properties[$property->getName()]['table'] = $oneTo['table'];
+                        $properties[$property->getName()]['where'] = $oneTo['where'];
+                    }
                 }else if(!empty($name)){
                     $properties[$property->getName()] = $name;
                 }
@@ -117,11 +121,18 @@ abstract class Repository extends DataBase {
 
         foreach ($properties as $key => $value){
             if(is_array($value)){
-                if(array_key_exists('table', $value)){
+                if(array_key_exists('entity', $value)/* && !array_key_exists('default', $value)*/){
+                    if(!empty($value['table'])){
+                        $linkSQL = "SELECT ".$value['table'].".".$value['key']." FROM ".$value['table']." WHERE ".$value['table'].".".$value['where']."= :id";
+                        $linkId = $this->execute($linkSQL, array("id" => $id));
+                        if(!empty($linkId))
+                            $properties[$key]['value'] =  $this->get($value['entity'], $linkId[$value['key']]);
+                    }else {
+                        $properties[$key]['value'] =  $this->getBy($value['entity'], array($value['key'] => $id));
+                    }
+                } else if(array_key_exists('table', $value)){
                     $join .= 'INNER JOIN '.$value['table'].' ON '.$table.'.id'.'='.$value['table'].'.'.$value['key'].' ';
                     $select .= ", ".$value['table'].'.'.$value['name'];
-                }else if(array_key_exists('entity', $value) && !array_key_exists('default', $value)){
-                    $value['value'] =  $this->getBy($value['entity'], array($value['key'] => $id));
                 }
             }else{
                 $select .= ", ".$table.'.'.$value;
@@ -132,7 +143,6 @@ abstract class Repository extends DataBase {
         $data = $this->execute($sql, array(
             'id' => $id
         ));
-
         return $this->construct($entityTarget, $data, $properties);
     }
 
@@ -147,7 +157,6 @@ abstract class Repository extends DataBase {
 
         $properties = $this->getProperties($entityTarget);
         $table = $properties['table'];
-        $select = "SELECT $table.id";
         $from = 'FROM '.$table;
         $where = '';
         $join = '';
@@ -156,36 +165,39 @@ abstract class Repository extends DataBase {
         unset($properties['constructor']);
 
         foreach ($properties as $key => $value){
-            if(is_array($value)){
-                if(array_key_exists('table', $value)){
-                    $join .= 'INNER JOIN '.$value['table'].' ON '.$table.'.id'.'='.$value['table'].'.'.$value['key'].' ';
-                    $select .= ", ".$value['table'].'.'.$value['name'];
-                }else if(array_key_exists('entity', $value) && !array_key_exists('default', $value)){
-                    $value['value'] =  $this->getBy($value['entity'], array($value['key'] => $id));
+            if(array_key_exists($key, $params)){
+                if(empty($where)){
+                    $where = " WHERE $table.$value = :$key";
+                }else {
+                    $where .= " AND $table.$value = :$key";
+
                 }
-            }else{
-                $select .= ", ".$table.'.'.$value;
-
-                if(array_key_exists($key, $params)){
+            }else if(is_array($value)){
+                if(!empty($value['name']) && array_key_exists($value['name'], $params)){
                     if(empty($where)){
-                        $where = " WHERE $table.$value = :$key";
+                        $where = " WHERE $table.$value = :".$value['name'];
                     }else {
-                        $where .= " AND $table.$value = :$key";
-
+                        $where .= " AND $table.$value = :".$value['name'];
                     }
-                }else if(array_key_exists($value, $params)){
+                }else if(array_key_exists($value['key'], $params)){
                     if(empty($where)){
-                        $where = " WHERE $table.$value = :$value";
+                        $where = " WHERE $table.$value = :".$value['name'];
                     }else {
-                        $where .= " AND $table.$value = :$value";
+                        $where .= " AND $table.$value = :".$value['name'];
                     }
+                }
+            } else if(array_key_exists($value, $params)){
+                if(empty($where)){
+                    $where = " WHERE $table.$value = :$value";
+                }else {
+                    $where .= " AND $table.$value = :$value";
                 }
             }
         }
 
-        $sql = $select." ".$from." ".$join.$where;
+        $sql = "SELECT $table.id ".$from." ".$join.$where;
         $data = $this->execute($sql, $params);
 
-        return $this->construct($entityTarget, $data, $properties);
+        return $this->get($entityTarget, $data['id']);
     }
 }
