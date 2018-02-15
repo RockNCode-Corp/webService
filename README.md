@@ -1,4 +1,4 @@
-#Web service / CMS by Rock'N'Code
+# Web service / CMS
 
 ## Require
     - YAML lib
