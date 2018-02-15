@@ -14,6 +14,6 @@
 
     spl_autoload_register([$autoloader, 'load']);
 
-    $routeur = new Routeur();
+    $routeur = new Router();
 
     $routeur->dispatch();

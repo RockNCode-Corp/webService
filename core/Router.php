@@ -6,24 +6,53 @@
  * Time: 10:10 AM
  */
 
-class Routeur{
+use view\Templating;
+use view\View;
+use view\ViewLoader;
 
+class Router{
+
+    /**
+     * @var array contains public routes
+     */
     private $routesPublic = [];
 
+    /**
+     * @var array contains admin routes
+     */
     private $routesAdmin = [];
+
+    /**
+     * @var Closure for call error 404
+     */
+    private $notFound;
+
+    /**
+     * @var View
+     */
+    private $view;
+
+    /**
+     * @var Logger
+     */
+    private $logger;
 
     public function __construct(){
         $fileRoutesPath = BASEPATH.'/app/routes/public.yml';
+
         try{
             $this->routesPublic = yaml_parse_file($fileRoutesPath);
         }catch (Exception $e){
             echo "Public routes file not found";
-            exit;    
+            exit;
         }
-        
-        if(file_exists($fileRoutesPath)){
+
+        if(file_exists(BASEPATH.'/app/routes/admins.yml')){
             $this->routesAdmin = yaml_parse_file(BASEPATH.'/app/routes/admins.yml');
         }
+
+        $this->view = new View(new ViewLoader(VIEWS_PATH), new Templating());
+        $this->logger = new Logger();
 
     }
 
@@ -33,6 +62,7 @@ class Routeur{
 
         $params = [];
         $pattern = '(?:[a-zA-Z0-9]*)';
+
         try{
             $routes = $this->routesPublic;
 
@@ -78,19 +108,24 @@ class Routeur{
 
                     $actionController = explode(':', $route['action']['controller']);
                     $nbParams = !empty($route['action']['params']) ? count($route['action']['params']):0;
-                    if(!empty($actionController[0]) && !empty($actionController[1]) && count($params) == $nbParams){
-                        $nameController = 'controllers\\'.$actionController[0]. 'Controller';
-                        $action = $actionController[1].'Action';
+                    if(!empty($actionController[0]) && !empty($actionController[1]) && !empty($actionController[2]) && count($params) == $nbParams){
+                        $nameController = $actionController[0].'Module\\controllers\\'.$actionController[1]. 'Controller';
+                        $action = $actionController[2].'Action';
                         return $this->appelActionControlleur($nameController, $action, $request, $params);
                     }
                 }
+            }elseif(file_exists(ASSETS_PATH.$url)){
+                $this->callFile($url);
+                return 1;
             }
 
-            return null;
+            return call_user_func_array($this->notFound, [$url]);
 
         }catch (Exception $e){
-            return null;
+            $this->logger->info('Error 500');
+            $this->manageError(500, array('error' => $e->getMessage(), 'code' => $e->getCode(), 'trace' => $e->getTraceAsString()));
         }
+        return 0;
     }
 
     /**
@@ -105,5 +140,45 @@ class Routeur{
         $controller = new $controller();
 
         return $controller->$action($request, $params);
+    }
+
+    /**
+     * Display file
+     * @param $url string name file to call
+     */
+    private function callFile($url){
+        $extension = array_reverse(explode('.', $url))[0];
+        $this->view->displayFile(ASSETS_PATH.$url, $extension);
+    }
+
+    /**
+     * Log and display error page
+     * @param $codeError int error code
+     * @param $error array contains message, stack trace, code error
+     */
+    public function manageError($codeError, $error){
+        $msg = $codeError.' - ';
+        if(!empty($error['code']))
+            $msg .= $error['error'].' code: '.$error['code'].' StackTrace: '.$error['trace'];
+        else
+            $msg .= $error['error'];
+        $this->view->display('error/error'.$codeError.'.php', $error);
+        $this->logger->error($msg);
+    }
+
+    /**
+     * Log warning
+     * @param $warning string type warning
+     * @param $message string
+     * @param $file string
+     * @param $line string
+     */
+    public function manageWarning($warning, $message, $file, $line){
+        $msg = $warning.' : '.$message.' StackTrace: #1 '.$file.' at '.$line;
+        $this->logger->warning($msg);
+    }
+
+    public function setNotFound($action){
+        $this->notFound = $action;
     }
 }
