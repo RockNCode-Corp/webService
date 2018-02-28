@@ -9,6 +9,7 @@
 namespace view;
 
 
+
 class Templating{
 
     /**
@@ -34,6 +35,10 @@ class Templating{
 
                     return $result;
             },
+            'url' =>
+                function($params){
+                    return \Router::getURL($params[0]);
+                }
 
         );
     }
@@ -47,7 +52,7 @@ class Templating{
     }
 
     private function applyHelpers(&$view, $data){
-        $view = preg_replace_callback('/(\{)(\{)((?:[a-zA-Z0-9_,\s]*))(\-)(\>)((?:[a-zA-Z0-9_,\s]*))(\})(\})/',
+        $view = preg_replace_callback('/(\{)(\{)((?:[a-zA-Z0-9_,\s]*))(\-)(\>)((?:[a-zA-Z0-9_,\/\s]*))(\})(\})/',
             function($match) use ($data){
                 $helper = trim($match[3]);
                 $params = trim($match[6]);

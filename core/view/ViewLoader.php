@@ -16,6 +16,10 @@ class ViewLoader{
 
     private $template = VIEWS_PATH.'template.php';
 
+    private $header;
+
+    private $footer;
+
     public function __construct($path){
         $this->path = $path;
     }
@@ -27,10 +31,10 @@ class ViewLoader{
         if(file_exists($path)){
             $body = file_get_contents($path);
             $this->loadTemplate($body);
-            $title = $this->title;
             $template = $this->template;
 
             ob_start();
+
             require $template;
 
             return ob_get_clean();
@@ -50,6 +54,11 @@ class ViewLoader{
                     case 'template':
                         $this->template = VIEWS_PATH.$data[1].'.php';
                         break;
+                    case 'header':
+                        $this->header = file_get_contents(VIEWS_PATH.$data[1].'.html');
+                        break;
+                    case 'footer':
+                        $this->footer = file_get_contents(VIEWS_PATH.$data[1].'.html');
                 }
 
                 return '';

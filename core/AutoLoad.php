@@ -23,7 +23,7 @@ class AutoLoad{
         }
 
         $name = str_replace('\\', '/', $name);
-        $filePath = BASEPATH . '/modules/' . $name . '.php';
+        $filePath = BASEPATH . '/src/modules/' . $name . '.php';
 
 
         if (file_exists($filePath)) {

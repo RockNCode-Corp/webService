@@ -1,4 +1,9 @@
 <?php
+
+use view\Templating;
+use view\View;
+use view\ViewLoader;
+
 /**
  * Created by PhpStorm.
  * User: apomalyn
@@ -7,6 +12,19 @@
  */
 
 class Controller{
+
+    /**
+     * @var Logger
+     */
+    protected $logger;
+
+    public function __construct(){
+        $this->view  = new View(new ViewLoader(VIEWS_PATH), new Templating());
+        $this->configuration = new Configuration();
+        $this->logger = new Logger();
+
+        $this->view->addStyle('main');
+    }
 
     /**
      * Access to config file

@@ -35,4 +35,11 @@ class Request{
         return $this->type;
     }
 
+    public function getUser(){
+        if(empty($_SESSION['user_id'])){
+           return null;
+        }else{
+            //TODO
+        }
+    }
 }

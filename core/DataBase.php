@@ -6,9 +6,6 @@
  * Time: 10:25 AM
  */
 
-use Configuration;
-use PDO;
-
 /**
  * Class DataBase connection to Database
  */
@@ -61,7 +58,7 @@ class DataBase{
             if($result->rowCount() == 1){
                 $data = $data[0];
             }
-            $data['nombre_lignes'] = $result->rowCount();
+            $data['row_count'] = $result->rowCount();
         }else if($lastId){
             $data[] = array(
                 'id' => self::getDb()->lastInsertId()
